@@ -90,8 +90,6 @@ class BookListSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if not request or not request.user.is_authenticated or request.user.role != 'reader':
             return False
-        if obj.available_quantity > 0:
-            return False
         max_reservation = int(settings.LIBRARY_CONFIG.get('MAX_RESERVATION_COUNT', 3))
         user_reservations = Reservation.objects.filter(
             reader=request.user,

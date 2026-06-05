@@ -271,7 +271,7 @@ const getStepValue = (key) => {
 const fetchConfigs = async () => {
   try {
     loading.value = true
-    const res = await axios.get('/api/system-configs/')
+    const res = await axios.get('/system-configs/')
     configs.value = res.data.results || res.data
   } catch (e) {
     ElMessage.error('获取系统配置失败')
@@ -293,7 +293,7 @@ const handleSubmit = async () => {
   try {
     await configFormRef.validate()
     submitting.value = true
-    await axios.put(`/api/system-configs/${configForm.id}/`, configForm)
+    await axios.put(`/system-configs/${configForm.id}/`, configForm)
     ElMessage.success('配置更新成功')
     dialogVisible.value = false
     fetchConfigs()

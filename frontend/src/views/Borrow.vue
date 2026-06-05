@@ -685,8 +685,8 @@ const getPaymentMethodText = (method) => {
 const fetchStats = async () => {
   try {
     const [borrowingRes, overdueRes] = await Promise.all([
-      axios.get('/api/borrow-records/', { params: { status: 'borrowed', page_size: 1 } }),
-      axios.get('/api/borrow-records/', { params: { status: 'overdue', page_size: 1 } })
+      axios.get('/borrow-records/', { params: { status: 'borrowed', page_size: 1 } }),
+      axios.get('/borrow-records/', { params: { status: 'overdue', page_size: 1 } })
     ])
     stats.borrowing_count = borrowingRes.data.count || 0
     stats.overdue_count = overdueRes.data.count || 0
@@ -708,7 +708,7 @@ const fetchRecords = async () => {
       params.search = [searchReader.value, searchBook.value].filter(Boolean).join(' ')
     }
     if (searchStatus.value) params.status = searchStatus.value
-    const res = await axios.get('/api/borrow-records/', { params })
+    const res = await axios.get('/borrow-records/', { params })
     records.value = (res.data.results || res.data).map(record => ({
       ...record,
       is_overdue: record.status === 'overdue' || (record.overdue_days && record.overdue_days > 0),
@@ -735,7 +735,7 @@ const fetchRenewalRecords = async () => {
       params.search = [renewSearchReader.value, renewSearchBook.value].filter(Boolean).join(' ')
     }
     if (renewSearchStatus.value) params.status = renewSearchStatus.value
-    const res = await axios.get('/api/renew-records/', { params })
+    const res = await axios.get('/renew-records/', { params })
     renewalRecords.value = res.data.results || res.data
     renewalsTotal.value = res.data.count || renewalRecords.value.length
   } catch (e) {
@@ -755,7 +755,7 @@ const fetchFineRecords = async () => {
     if (fineSearchReader.value) params.reader = fineSearchReader.value
     if (fineSearchBook.value) params.book = fineSearchBook.value
     if (fineSearchStatus.value) params.status = fineSearchStatus.value
-    const res = await axios.get('/api/fine-records/', { params })
+    const res = await axios.get('/fine-records/', { params })
     fineRecords.value = res.data.results || res.data
     finesTotal.value = res.data.count || fineRecords.value.length
   } catch (e) {
@@ -806,7 +806,7 @@ const handleResetFines = () => {
 
 const fetchReaders = async () => {
   try {
-    const res = await axios.get('/api/users/', { params: { role: 'reader' } })
+    const res = await axios.get('/users/', { params: { role: 'reader' } })
     readers.value = res.data.results || res.data
   } catch (e) {
     console.error(e)
@@ -815,7 +815,7 @@ const fetchReaders = async () => {
 
 const fetchAvailableBooks = async () => {
   try {
-    const res = await axios.get('/api/books/', { params: { status: 'available' } })
+    const res = await axios.get('/books/', { params: { status: 'available' } })
     availableBooks.value = (res.data.results || res.data).filter(b => b.available_quantity > 0)
   } catch (e) {
     console.error(e)
@@ -837,7 +837,7 @@ const submitBorrow = async () => {
   try {
     await borrowFormRef.value.validate()
     submitting.value = true
-    await axios.post('/api/borrow-records/', borrowForm)
+    await axios.post('/borrow-records/', borrowForm)
     ElMessage.success('借书登记成功')
     borrowDialogVisible.value = false
     fetchRecords()
@@ -881,7 +881,7 @@ const submitReturn = async () => {
     if (returnData.fine_amount > 0) {
       data.payment_method = returnForm.payment_method
     }
-    await axios.post(`/api/borrow-records/${returnData.id}/return_book/`, data)
+    await axios.post(`/borrow-records/${returnData.id}/return_book/`, data)
     ElMessage.success('还书成功')
     returnDialogVisible.value = false
     fetchRecords()
@@ -904,7 +904,7 @@ const handleMarkLost = (row) => {
   }).then(async () => {
     try {
       submitting.value = true
-      await axios.post(`/api/borrow-records/${row.id}/mark_lost/`)
+      await axios.post(`/borrow-records/${row.id}/mark_lost/`)
       ElMessage.success('已标记为丢失')
       fetchRecords()
       fetchStats()
@@ -925,7 +925,7 @@ const handleApproveRenew = (row) => {
   }).then(async () => {
     try {
       submitting.value = true
-      await axios.post('/api/renew-records/review/', {
+      await axios.post('/renew-records/review/', {
         renew_id: row.id,
         approved: true,
         review_remark: ''
@@ -951,7 +951,7 @@ const submitReject = async () => {
   try {
     await rejectFormRef.value.validate()
     submitting.value = true
-    await axios.post('/api/renew-records/review/', {
+    await axios.post('/renew-records/review/', {
       renew_id: currentRenewRecord.value.id,
       approved: false,
       review_remark: rejectForm.remark
@@ -981,7 +981,7 @@ const submitPay = async () => {
   try {
     await payFormRef.value.validate()
     submitting.value = true
-    await axios.post('/api/fine-records/pay/', {
+    await axios.post('/fine-records/pay/', {
       id: payForm.id,
       payment_method: payForm.payment_method
     })
@@ -1017,7 +1017,7 @@ const submitWaive = async () => {
   try {
     await waiveFormRef.value.validate()
     submitting.value = true
-    await axios.post(`/api/fine-records/${waiveForm.id}/waive/`, {
+    await axios.post(`/fine-records/${waiveForm.id}/waive/`, {
       reason: waiveForm.reason
     })
     ElMessage.success('减免成功')

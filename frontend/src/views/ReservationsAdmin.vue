@@ -241,7 +241,7 @@ const fetchReservations = async () => {
     if (searchBookId.value) params.book_id = searchBookId.value
     if (searchStatus.value) params.status = searchStatus.value
     
-    const res = await axios.get('/api/reservations/', { params })
+    const res = await axios.get('/reservations/', { params })
     reservations.value = res.data.results || res.data
     total.value = res.data.count || reservations.value.length
     

@@ -228,7 +228,7 @@ const fetchLogs = async () => {
     if (searchForm.start_date) params.start_date = searchForm.start_date
     if (searchForm.end_date) params.end_date = searchForm.end_date
 
-    const res = await axios.get('/api/operation-logs/', { params })
+    const res = await axios.get('/operation-logs/', { params })
     logs.value = res.data.results || res.data
     total.value = res.data.count || logs.value.length
   } catch (e) {

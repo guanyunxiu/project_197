@@ -267,7 +267,6 @@ class BookViewSet(viewsets.ModelViewSet):
     queryset = Book.objects.all()
     serializer_class = BookSerializer
     permission_classes = [IsAuthenticated]
-    parser_classes = [MultiPartParser, FormParser]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['title', 'author', 'isbn', 'publisher']
     ordering_fields = ['title', 'author', 'borrow_count', 'created_at', 'available_quantity']
@@ -347,6 +346,46 @@ class BookViewSet(viewsets.ModelViewSet):
 
             return Response(ReservationSerializer(reservation).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'], permission_classes=[IsAdminRole])
+    def upload_cover(self, request):
+        cover_file = request.FILES.get('file')
+        if not cover_file:
+            return Response({'detail': '请上传封面图片'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            from PIL import Image
+            img = Image.open(cover_file)
+            img.verify()
+        except Exception:
+            return Response({'detail': '无效的图片文件'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if cover_file.size > 2 * 1024 * 1024:
+            return Response({'detail': '图片大小不能超过2MB'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        import os
+        from django.conf import settings
+        from django.core.files.storage import default_storage
+        from django.core.files.base import ContentFile
+        
+        ext = os.path.splitext(cover_file.name)[1].lower()
+        if ext not in ['.jpg', '.jpeg', '.png', '.gif', '.webp']:
+            return Response({'detail': '不支持的图片格式'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        import uuid
+        filename = f'book_covers/{uuid.uuid4()}{ext}'
+        saved_path = default_storage.save(filename, ContentFile(cover_file.read()))
+        cover_url = default_storage.url(saved_path)
+        
+        log_operation(
+            request, 'update', 'Book', None, cover_file.name,
+            f'上传图书封面: {cover_file.name}'
+        )
+        
+        return Response({
+            'url': cover_url,
+            'path': saved_path
+        }, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=['post'], permission_classes=[IsAdminRole])
     def import_excel(self, request):
@@ -516,6 +555,23 @@ class BorrowRecordViewSet(viewsets.ModelViewSet):
             reader=request.user,
             status__in=['borrowed', 'overdue']
         ).order_by('-borrow_date')
+        page = self.paginate_queryset(records)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(records, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def my_borrows(self, request):
+        records = BorrowRecord.objects.filter(
+            reader=request.user
+        ).order_by('-borrow_date')
+        
+        status = request.query_params.get('status')
+        if status:
+            records = records.filter(status=status)
+        
         page = self.paginate_queryset(records)
         if page is not None:
             serializer = self.get_serializer(page, many=True)

@@ -352,7 +352,7 @@ const fetchRecords = async () => {
     if (filterStatus.value) params.status = filterStatus.value
     if (activeTab.value === 'overdue') params.status = 'overdue'
     
-    const res = await axios.get('/api/borrow-records/my_borrows/', { params })
+    const res = await axios.get('/borrow-records/my_borrows/', { params })
     records.value = res.data.results || res.data
     total.value = res.data.count || records.value.length
   } catch (e) {
@@ -364,7 +364,7 @@ const fetchRecords = async () => {
 
 const fetchStatistics = async () => {
   try {
-    const res = await axios.get('/api/borrow-records/my_borrows/')
+    const res = await axios.get('/borrow-records/my_borrows/')
     const allRecords = res.data.results || res.data
     
     statistics.borrowing_count = allRecords.filter(r => 
@@ -441,7 +441,7 @@ const submitRenew = async () => {
     ).then(async () => {
       try {
         renewSubmitting.value = true
-        await axios.post(`/api/borrow-records/${renewForm.id}/renew/`, {
+        await axios.post(`/borrow-records/${renewForm.id}/renew/`, {
           renew_days: renewForm.renew_days
         })
         ElMessage.success('续借成功')
@@ -475,7 +475,7 @@ const handleReturn = (row) => {
   ).then(async () => {
     try {
       loading.value = true
-      await axios.post(`/api/borrow-records/${row.id}/return_book/`)
+      await axios.post(`/borrow-records/${row.id}/return_book/`)
       ElMessage.success('还书成功')
       fetchRecords()
       fetchStatistics()
@@ -523,7 +523,7 @@ const submitPayFine = async () => {
     ).then(async () => {
       try {
         payFineSubmitting.value = true
-        await axios.post('/api/fine-records/pay/', {
+        await axios.post('/fine-records/pay/', {
           borrow_record_id: payFineForm.id,
           payment_method: payFineForm.payment_method
         })

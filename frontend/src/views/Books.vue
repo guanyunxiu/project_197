@@ -334,8 +334,8 @@ const borrowDialogVisible = ref(false)
 const borrowBook = ref(null)
 const borrowFormRef = ref()
 
-const uploadUrl = '/api/books/upload_cover/'
-const importUrl = '/api/books/import_excel/'
+const uploadUrl = '/books/upload_cover/'
+const importUrl = '/books/import_excel/'
 
 const uploadHeaders = computed(() => ({
   Authorization: `Bearer ${localStorage.getItem('token') || ''}`
