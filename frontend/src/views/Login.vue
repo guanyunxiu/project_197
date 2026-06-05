@@ -52,6 +52,9 @@ const handleLogin = async () => {
     localStorage.setItem('refresh_token', res.data.refresh)
     localStorage.setItem('user', JSON.stringify(res.data.user))
     ElMessage.success('登录成功')
+    if (window.__updateAuthState) {
+      window.__updateAuthState()
+    }
     if (res.data.user.role === 'admin') {
       router.push('/dashboard')
     } else {

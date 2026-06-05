@@ -75,7 +75,7 @@
           <el-input v-model="bookForm.publisher" />
         </el-form-item>
         <el-form-item label="出版日期" prop="publish_date">
-          <el-date-picker v-model="bookForm.publish_date" type="date" style="width: 100%;" />
+          <el-date-picker v-model="bookForm.publish_date" type="date" value-format="YYYY-MM-DD" style="width: 100%;" />
         </el-form-item>
         <el-form-item label="分类" prop="category">
           <el-select v-model="bookForm.category" style="width: 100%;">

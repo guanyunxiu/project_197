@@ -80,9 +80,22 @@ const route = useRoute()
 const router = useRouter()
 
 const currentUser = ref({})
+const isLoggedInRef = ref(!!localStorage.getItem('token'))
 
-const isLoggedIn = computed(() => !!localStorage.getItem('token'))
+const isLoggedIn = computed(() => isLoggedInRef.value)
 const isAdmin = computed(() => currentUser.value.role === 'admin')
+
+const updateAuthState = () => {
+  isLoggedInRef.value = !!localStorage.getItem('token')
+  if (isLoggedInRef.value) {
+    const savedUser = localStorage.getItem('user')
+    if (savedUser) {
+      currentUser.value = JSON.parse(savedUser)
+    }
+  } else {
+    currentUser.value = {}
+  }
+}
 
 const activeMenu = computed(() => route.path)
 
@@ -129,7 +142,7 @@ const handleCommand = (command) => {
       localStorage.removeItem('token')
       localStorage.removeItem('refresh_token')
       localStorage.removeItem('user')
-      currentUser.value = {}
+      updateAuthState()
       router.push('/login')
       ElMessage.success('退出成功')
     }).catch(() => {})
@@ -137,14 +150,13 @@ const handleCommand = (command) => {
 }
 
 onMounted(() => {
+  updateAuthState()
   if (isLoggedIn.value) {
-    const savedUser = localStorage.getItem('user')
-    if (savedUser) {
-      currentUser.value = JSON.parse(savedUser)
-    }
     fetchUserInfo()
   }
 })
+
+window.__updateAuthState = updateAuthState
 </script>
 
 <style scoped>
