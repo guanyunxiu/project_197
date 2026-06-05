@@ -55,11 +55,7 @@ const handleLogin = async () => {
     if (window.__updateAuthState) {
       window.__updateAuthState()
     }
-    if (res.data.user.role === 'admin') {
-      router.push('/dashboard')
-    } else {
-      router.push('/books')
-    }
+    router.push('/dashboard')
   } catch (e) {
     ElMessage.error(e.response?.data?.detail || '登录失败')
   } finally {

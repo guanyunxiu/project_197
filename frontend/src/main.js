@@ -4,6 +4,8 @@ import 'element-plus/dist/index.css'
 import App from './App.vue'
 import router from './router'
 import axios from 'axios'
+import * as echarts from 'echarts'
+import VChart from 'vue-echarts'
 
 const app = createApp(App)
 
@@ -29,6 +31,9 @@ axios.interceptors.response.use(
 )
 
 app.config.globalProperties.$axios = axios
+app.config.globalProperties.$echarts = echarts
+
+app.component('VChart', VChart)
 
 app.use(ElementPlus)
 app.use(router)

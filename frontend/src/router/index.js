@@ -22,7 +22,19 @@ const routes = [
     path: '/dashboard',
     name: 'Dashboard',
     component: () => import('../views/Dashboard.vue'),
-    meta: { requiresAuth: true, roles: ['admin'] }
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/statistics',
+    name: 'Statistics',
+    component: () => import('../views/Statistics.vue'),
+    meta: { requiresAuth: true, roles: ['super_admin', 'admin'] }
+  },
+  {
+    path: '/operation-logs',
+    name: 'OperationLogs',
+    component: () => import('../views/OperationLogs.vue'),
+    meta: { requiresAuth: true, roles: ['super_admin', 'admin'] }
   },
   {
     path: '/books',
@@ -34,19 +46,37 @@ const routes = [
     path: '/categories',
     name: 'Categories',
     component: () => import('../views/Categories.vue'),
-    meta: { requiresAuth: true, roles: ['admin'] }
+    meta: { requiresAuth: true, roles: ['super_admin', 'admin'] }
   },
   {
     path: '/readers',
     name: 'Readers',
     component: () => import('../views/Readers.vue'),
-    meta: { requiresAuth: true, roles: ['admin'] }
+    meta: { requiresAuth: true, roles: ['super_admin', 'admin'] }
   },
   {
     path: '/borrow',
     name: 'Borrow',
     component: () => import('../views/Borrow.vue'),
-    meta: { requiresAuth: true, roles: ['admin'] }
+    meta: { requiresAuth: true, roles: ['super_admin', 'admin'] }
+  },
+  {
+    path: '/fines',
+    name: 'Fines',
+    component: () => import('../views/Fines.vue'),
+    meta: { requiresAuth: true, roles: ['super_admin', 'admin'] }
+  },
+  {
+    path: '/renewals',
+    name: 'Renewals',
+    component: () => import('../views/Renewals.vue'),
+    meta: { requiresAuth: true, roles: ['super_admin', 'admin'] }
+  },
+  {
+    path: '/reservations-admin',
+    name: 'ReservationsAdmin',
+    component: () => import('../views/ReservationsAdmin.vue'),
+    meta: { requiresAuth: true, roles: ['super_admin', 'admin'] }
   },
   {
     path: '/my-borrow',
@@ -61,10 +91,34 @@ const routes = [
     meta: { requiresAuth: true, roles: ['reader'] }
   },
   {
+    path: '/my-reservations',
+    name: 'MyReservations',
+    component: () => import('../views/MyReservations.vue'),
+    meta: { requiresAuth: true, roles: ['reader'] }
+  },
+  {
+    path: '/my-fines',
+    name: 'MyFines',
+    component: () => import('../views/MyFines.vue'),
+    meta: { requiresAuth: true, roles: ['reader'] }
+  },
+  {
+    path: '/my-stats',
+    name: 'MyStats',
+    component: () => import('../views/MyStats.vue'),
+    meta: { requiresAuth: true, roles: ['reader'] }
+  },
+  {
     path: '/profile',
     name: 'Profile',
     component: () => import('../views/Profile.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/system-config',
+    name: 'SystemConfig',
+    component: () => import('../views/SystemConfig.vue'),
+    meta: { requiresAuth: true, roles: ['super_admin'] }
   }
 ]
 
@@ -80,17 +134,9 @@ router.beforeEach((to, from, next) => {
   if (to.meta.requiresAuth && !token) {
     next('/login')
   } else if (to.meta.roles && !to.meta.roles.includes(user.role)) {
-    if (user.role === 'admin') {
-      next('/dashboard')
-    } else {
-      next('/books')
-    }
+    next('/dashboard')
   } else if ((to.path === '/login' || to.path === '/register') && token) {
-    if (user.role === 'admin') {
-      next('/dashboard')
-    } else {
-      next('/books')
-    }
+    next('/dashboard')
   } else {
     next()
   }
