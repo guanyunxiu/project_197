@@ -302,9 +302,6 @@ class CreateReservationSerializer(serializers.Serializer):
         if not book:
             raise serializers.ValidationError({'book_id': '图书不存在'})
 
-        if book.available_quantity > 0:
-            raise serializers.ValidationError({'book_id': '该书有库存，可直接借阅，无需预约'})
-
         existing = Reservation.objects.filter(
             reader=reader,
             book=book,

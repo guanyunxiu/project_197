@@ -102,7 +102,6 @@
             <div class="book-actions">
               <el-button size="small" @click="handleView(book)">查看</el-button>
               <el-button
-                v-if="isAdmin"
                 size="small"
                 type="primary"
                 @click="handleBorrow(book)"
@@ -252,7 +251,6 @@
       </div>
       <template #footer>
         <el-button
-          v-if="isAdmin"
           type="primary"
           @click="handleBorrow(currentBook)"
           :disabled="!currentBook.can_borrow"
@@ -334,8 +332,8 @@ const borrowDialogVisible = ref(false)
 const borrowBook = ref(null)
 const borrowFormRef = ref()
 
-const uploadUrl = '/books/upload_cover/'
-const importUrl = '/books/import_excel/'
+const uploadUrl = '/api/books/upload_cover/'
+const importUrl = '/api/books/import_excel/'
 
 const uploadHeaders = computed(() => ({
   Authorization: `Bearer ${localStorage.getItem('token') || ''}`
@@ -552,15 +550,44 @@ const handleDelete = (row) => {
   }).catch(() => {})
 }
 
-const handleBorrow = (book) => {
+const handleBorrow = async (book) => {
   if (!book.can_borrow) {
     ElMessage.warning('该图书不可借阅')
     return
   }
-  borrowBook.value = book
-  borrowForm.reader = ''
-  borrowForm.days = 30
-  borrowDialogVisible.value = true
+  if (isAdmin.value) {
+    borrowBook.value = book
+    borrowForm.reader = ''
+    borrowForm.days = 30
+    borrowDialogVisible.value = true
+  } else {
+    try {
+      await ElMessageBox.confirm(`确定要借阅图书《${book.title}》吗？`, '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'primary'
+      })
+      borrowing.value = true
+      await axios.post(`/books/${book.id}/borrow/`, {
+        days: 30
+      })
+      ElMessage.success('借阅成功')
+      detailVisible.value = false
+      fetchBooks()
+    } catch (e) {
+      if (e !== 'cancel') {
+        const errors = e.response?.data
+        if (errors) {
+          const firstError = Object.values(errors)[0]
+          ElMessage.error(Array.isArray(firstError) ? firstError[0] : firstError)
+        } else {
+          ElMessage.error('借阅失败')
+        }
+      }
+    } finally {
+      borrowing.value = false
+    }
+  }
 }
 
 const handleBorrowSubmit = async () => {

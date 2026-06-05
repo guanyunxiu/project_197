@@ -272,7 +272,7 @@ class BookViewSet(viewsets.ModelViewSet):
     ordering_fields = ['title', 'author', 'borrow_count', 'created_at', 'available_quantity']
 
     def get_permissions(self):
-        if self.action in ['list', 'retrieve', 'reserve', 'hot_books']:
+        if self.action in ['list', 'retrieve', 'reserve', 'borrow', 'hot_books']:
             return [IsAuthenticated()]
         return [IsAdminRole()]
 
@@ -346,6 +346,71 @@ class BookViewSet(viewsets.ModelViewSet):
 
             return Response(ReservationSerializer(reservation).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def borrow(self, request, pk=None):
+        book = self.get_object()
+        user = request.user
+        
+        if user.role == 'reader':
+            reader_id = user.id
+        else:
+            reader_id = request.data.get('reader_id')
+            if not reader_id:
+                return Response({'detail': '请选择读者'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        days = int(request.data.get('days', 30))
+        
+        if book.available_quantity <= 0:
+            return Response({'detail': '该图书库存不足'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        existing = BorrowRecord.objects.filter(
+            reader_id=reader_id,
+            book=book,
+            status__in=['borrowed', 'overdue']
+        ).exists()
+        if existing:
+            return Response({'detail': '您已借阅过该图书，请勿重复借阅'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        max_borrow = int(settings.LIBRARY_CONFIG.get('MAX_BORROW_COUNT', 5))
+        user_borrows = BorrowRecord.objects.filter(
+            reader_id=reader_id,
+            status__in=['borrowed', 'overdue']
+        ).count()
+        if user_borrows >= max_borrow:
+            return Response({'detail': f'您的借阅数量已达上限（{max_borrow}本）'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        default_days = int(settings.LIBRARY_CONFIG.get('DEFAULT_BORROW_DAYS', 30))
+        if days > default_days:
+            return Response({'detail': f'借阅天数不能超过{default_days}天'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        due_date = timezone.now().date() + timedelta(days=days)
+        
+        borrow_record = BorrowRecord.objects.create(
+            reader_id=reader_id,
+            book=book,
+            borrow_date=timezone.now().date(),
+            due_date=due_date,
+            status='borrowed'
+        )
+        
+        book.available_quantity -= 1
+        book.borrow_count += 1
+        book.update_status()
+        book.save()
+        
+        log_operation(
+            request, 'borrow', 'BorrowRecord', borrow_record.id, book.title,
+            f'借阅图书: {book.title}'
+        )
+        
+        return Response({
+            'id': borrow_record.id,
+            'book_title': book.title,
+            'borrow_date': borrow_record.borrow_date,
+            'due_date': due_date,
+            'status': 'borrowed'
+        }, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=['post'], permission_classes=[IsAdminRole])
     def upload_cover(self, request):
